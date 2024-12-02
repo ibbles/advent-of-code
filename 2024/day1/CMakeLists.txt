@@ -1,7 +1,12 @@
 add_executable(day1_part1 "day1_part1.cpp")
-target_compile_options(day1_part1 PRIVATE "-Wall" "-pedantic")
+target_link_libraries(day1_part1 PRIVATE global-flags sanitizers)
+
+add_executable(day1_part1d "day1_part1.cpp")
+target_link_libraries(day1_part1 PRIVATE global-flags debug-flags)
 
 add_executable(day1_part2 "day1_part2.cpp")
-target_compile_options(day1_part2 PRIVATE "-Wall" "-pedantic" "-fsanitize=address,undefined")
-target_link_options(day1_part2 PRIVATE "-fsanitize=address,undefined")
+target_link_libraries(day1_part2 PRIVATE global-flags sanitizers)
+
+add_executable(day1_part2d "day1_part2.cpp")
+target_link_libraries(day1_part2d PRIVATE global-flags debug-flags)
 
