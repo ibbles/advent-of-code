@@ -1,2 +1,4 @@
-# advent-of-code
-My Advent of Code solutions
+# Advent Of Code
+
+My Advent of Code solutions.
+Build and run instructions vary from year to year.

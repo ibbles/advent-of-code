@@ -1,22 +1,58 @@
 #!/bin/bash
 
+# Print an error message and exit.
 function bail {
-    echo "$1" 1>&2
+    echo -e "$@" 1>&2
     exit 1
 }
 
-if [ ! -f "Makefile" ] ; then
-    bail "This script should be run from the build directory, i.e. where there is a CMakeLists.txt."
+# Make sure we are being run from the build directory.
+if [ ! -f "CMakeCache.txt" ] ; then
+    bail "This script should be run from the build directory, i.e. where there is a CMakeCache.txt."
 fi
 
-day=""
+# Gather directories.
+source_dir=`grep "AdventOfCode-2024_SOURCE_DIR" "CMakeCache.txt" | cut -d '=' -f 2`
+base_dir=`realpath "${source_dir}/../../"`
+build_dir=`realpath .`
+if [ -z "${source_dir}" ] ; then
+    bail "Could not find source directory from CMakeCache.txt"
+fi
+if [ ! -d "${source_dir}" ] ; then
+    bail "Source directory '${source_dir}' does not exists."
+fi
+if [ ! -d "${base_dir}" ] ; then
+    bail  "Base directory '${base_dir}' does not exists."
+fi
+if [ ! -d "${build_dir}" ] ; then
+    bail "Build directory '${buid_dir}' does not exists."
+fi
+
 year=`date +%Y`
 
-while getopts "d:" opt ; do
+clean="no"
+day=""
+tidy="no"
+
+options="cd:th"
+
+while getopts $options opt ; do
     case $opt in
+        c)
+            clean="yes"
+            ;;
         d)
             day=$OPTARG
             ;;
+        t)
+            tidy="yes"
+            ;;
+        ?)
+            bail "Usage: `basename $0` -$options\n" \
+                "  c=clean build\n" \
+                "  d=day INT\n" \
+                "  t=cland-tidy\n" \
+                "  h=help"
     esac
 done
 
@@ -33,9 +69,13 @@ function clang_tidy {
     fi
 }
 
-make clean
-clang_tidy ../repository/2024/day${day}/day${day}_part1.cpp
-clang_tidy ../repository/2024/day${day}/day${day}_part2.cpp
+if [ "${clean}" == "yes" ] ; then
+    make clean
+fi
+if [ "${tidy}" == "yes" ] ; then
+    clang_tidy "${source_dir}/day${day}/day${day}_part1.cpp"
+    clang_tidy "${source_dir}/day${day}/day${day}_part2.cpp"
+fi
 make day${day}_part1 day${day}_part2
 if [ $? -ne 0 ] ; then
     bail "Compilation failed."
@@ -45,7 +85,7 @@ function run_part {
     part=$1
     echo -e "\nRunning test cases for day ${day} part ${part}."
 
-    cases_dir=`realpath "../cases/$year/day${day}/part${part}"`
+    cases_dir=`realpath "${base_dir}/cases/$year/day${day}/part${part}"`
     if [ ! -d "${cases_dir}" ] ; then
         bail "No test cases for day ${day} part ${part} at '${cases_dir}'."
     fi
@@ -59,7 +99,7 @@ function run_part {
         output_file="${output_dir}/${test_name}.output"
 
 
-        # Runt he program.
+        # Run the program.
         # The ugly bit at the start is a workaround for a bug with the santizers
         # in combination with adress space layout randomization.
         # See https://stackoverflow.com/a/78302537
